@@ -33,6 +33,32 @@ if (!Array.isArray(listed) || listed.length === 0 || listed.length > 15) {
   process.exit(1);
 }
 
+// Every address must be a real X status URL, all from one handle, no repeats.
+const POST_URL = /^https:\/\/x\.com\/([A-Za-z0-9_]+)\/status\/(\d+)$/;
+const handles = new Set();
+const seen = new Set();
+for (const url of listed) {
+  if (typeof url !== 'string') {
+    console.error('POSTS.json entries must be strings');
+    process.exit(1);
+  }
+  const m = POST_URL.exec(url);
+  if (!m) {
+    console.error(`bad post address: ${url}`);
+    process.exit(1);
+  }
+  handles.add(m[1]);
+  if (seen.has(url)) {
+    console.error(`duplicate post address: ${url}`);
+    process.exit(1);
+  }
+  seen.add(url);
+}
+if (handles.size !== 1) {
+  console.error('POSTS.json posts must all be from one X handle');
+  process.exit(1);
+}
+
 mkdirSync(OUTPUT_DIR, { recursive: true });
 copyFileSync(source, join(OUTPUT_DIR, 'POSTS.json'));
 console.log(`copied POSTS.json with ${listed.length} posts to ${OUTPUT_DIR}`);
